@@ -1,13 +1,13 @@
 {
-  "name": "llm-code-review",
+  "name": "ai-pr-reviewer",
   "version": "1.0.0",
-  "description": "LLM-based code review GitHub Action",
+  "description": "AI-powered PR reviewer",
+  "main": "review.js",
   "scripts": {
     "start": "node review.js"
   },
   "dependencies": {
-    "axios": "^1.4.0",
-    "@actions/core": "^1.11.0",
-    "@actions/github": "^6.0.0"
+    "@octokit/rest": "^19.0.7",
+    "axios": "^1.4.0"
   }
 }
