@@ -8,6 +8,7 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
+// This is review file
 const reviewFile = async (content, fileName) => {
   console.log(`Reviewing file: ${fileName}`);
   let responseText = '';
