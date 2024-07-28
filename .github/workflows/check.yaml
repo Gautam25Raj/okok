@@ -19,15 +19,23 @@ jobs:
         with:
           node-version: '20'
       - name: Install dependencies
-        run: npm install @octokit/rest node-fetch @anthropic-ai/sdk @actions/github
+        run: npm install @octokit/rest node-fetch @anthropic-ai/sdk @actions/github @actions/core
       - name: Run AI Review
         id: ai-review
         env:
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-        run: node review.js ${{ steps.changed-files.outputs.all_changed_files }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          output=$(node review.js ${{ steps.changed-files.outputs.all_changed_files }})
+          echo "comment<<EOF" >> $GITHUB_OUTPUT
+          echo "$output" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      - name: Debug Output
+        run: echo "${{ steps.ai-review.outputs.comment }}"
       - name: Create comment
         uses: peter-evans/create-or-update-comment@v3
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: ${{ steps.ai-review.outputs.comment }}
           edit-mode: replace
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
