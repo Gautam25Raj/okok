@@ -11,7 +11,7 @@ async function reviewFile(content, fileName) {
   console.log(`Reviewing file: ${fileName}`);
 
   const response = await anthropic.messages.create({
-    model: "claude-3-5-sonnet-20240620", // Replace with your desired model
+    model: "claude-3-5-sonnet-20240620",
     max_tokens: 150,
     temperature: 0,
     system: `You are a code reviewer. Review the following code file named ${fileName} based on best practices, code efficiency, and clarity. Provide a score from 1 to 10 and a brief feedback message.\n\n${content}\n\nRespond with no formatting, in the following structure:\n{\n"points": int,\n"message": str\n}`,
@@ -38,7 +38,7 @@ async function main() {
   const codeSnippets = JSON.parse(core.getInput('codeSnippets'));
   const pullRequestNumber = github.context.payload.pull_request.number;
 
-  const reviews = []; // Array to store review results
+  const reviews = [];
   for (const [fileName, content] of Object.entries(codeSnippets)) {
     try {
       const review = await reviewFile(content, fileName);
