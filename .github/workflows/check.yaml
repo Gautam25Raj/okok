@@ -20,6 +20,16 @@ jobs:
           node-version: '20'
       - name: Install dependencies
         run: npm install groq-sdk @actions/core @octokit/rest
+      - name: Check API Key
+        run: |
+          if [ -z "$GROQ_API_KEY" ]; then
+            echo "GROQ_API_KEY is not set"
+            exit 1
+          else
+            echo "GROQ_API_KEY is set and its length is ${#GROQ_API_KEY}"
+          fi
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
       - name: Run AI Review
         id: ai-review
         env:
