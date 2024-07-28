@@ -1,0 +1,42 @@
+name: LLM Code Review
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  code_review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - run: npm install
+      - id: fetch_pr
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const pullRequest = context.payload.pull_request;
+            const changedFiles = pullRequest.files.map(file => file.filename);
+            const codeSnippets = {};
+            for (const file of changedFiles) {
+              const fileContent = context.github.repos.getContent({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                path: file,
+                ref: pullRequest.head.sha
+              }).data.content;
+              codeSnippets[file] = Buffer.from(fileContent, 'base64').toString();
+            }
+            core.setOutput('codeSnippets', JSON.stringify(codeSnippets));
+          result-encoding: json
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - run: npm install
+      - uses: actions/checkout@v3
+      - run: node review.js
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
