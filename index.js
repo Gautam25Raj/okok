@@ -1,56 +1,41 @@
-const axios = require('axios');
-const core = require('@actions/core');
-const github = require('@actions/github');
-const anthropic = require('anthropic');
+const fs = require('fs');
+const path = require('path');
+const { Anthropic } = require('@anthropic-ai/sdk');
 
-anthropic.configure({
-  api_key: process.env.YOUR_ANTHROPIC_API_KEY
+const anthropic = new Anthropic({
+  apiKey: process.env.API_KEY,
 });
 
-async function reviewFile(content, fileName) {
+const reviewFile = async (content, fileName) => {
   console.log(`Reviewing file: ${fileName}`);
-
   const response = await anthropic.messages.create({
-    model: "claude-3-5-sonnet-20240620", // Replace with your desired model
-    max_tokens: 150,
+    model: "claude-3-5-sonnet-20240620",
+    max_tokens: 250,
     temperature: 0,
     system: `You are a code reviewer. Review the following code file named ${fileName} based on best practices, code efficiency, and clarity. Provide a score from 1 to 10 and a brief feedback message.\n\n${content}\n\nRespond with no formatting, in the following structure:\n{\n"points": int,\n"message": str\n}`,
     messages: []
   });
-
   console.log(`API Response:`, response);
-  const result = JSON.parse(response.message.trim());
+  const result = JSON.parse(response.content[0].text.trim());
   return result;
-}
-
-async function postComment(pullRequestNumber, comment) {
-  const octokit = github.getOctokit(core.getInput('GITHUB_TOKEN'));
-
-  await octokit.rest.issues.createComment({
-    owner: context.repo.owner,
-    repo: context.repo.repo,
-    issue_number: pullRequestNumber,
-    body: comment
-  });
-}
+};
 
 async function main() {
-  const codeSnippets = JSON.parse(core.getInput('codeSnippets'));
-  const pullRequestNumber = github.context.payload.pull_request.number;
+  const changedFiles = process.argv.slice(2);
+  const reviews = await Promise.all(changedFiles.map(async (filePath) => {
+    const content = fs.readFileSync(filePath, 'utf8');
+    const fileName = path.basename(filePath);
+    const review = await reviewFile(content, fileName);
+    return { file: fileName, message: review.message, score: review.points };
+  }));
 
-  const reviews = []; // Array to store review results
-  for (const [fileName, content] of Object.entries(codeSnippets)) {
-    try {
-      const review = await reviewFile(content, fileName);
-      reviews.push(review);
-    } catch (error) {
-      core.setFailed(`Error reviewing file ${fileName}: ${error.message}`);
-    }
-  }
+  const comment = reviews.map(review => `
+| 📂 **File**   | 💬 **Comment** | 🏆 **Score**    |
+| :-----------: |---------------| :-------------: |
+| \`${review.file}\` | ${review.message} | ${review.score}/10 |
+  `).join('\n');
 
-  const llmFeedback = `**LLM Code Review:**\n\n${reviews.map(review => `- **${review.file}**: ${review.points}/10 - ${review.message}`).join('\n')}`;
-
-  await postComment(pullRequestNumber, llmFeedback);
+  console.log(`::set-output name=comment::${comment}`);
 }
 
-main();
+main().catch(console.error);
