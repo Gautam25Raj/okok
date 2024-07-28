@@ -19,11 +19,11 @@ jobs:
         with:
           node-version: '20'
       - name: Install dependencies
-        run: npm install @octokit/rest node-fetch @anthropic-ai/sdk @actions/github @actions/core
+        run: npm ci
       - name: Run AI Review
         id: ai-review
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           output=$(node review.js ${{ steps.changed-files.outputs.all_changed_files }})
           echo "comment<<EOF" >> $GITHUB_OUTPUT
