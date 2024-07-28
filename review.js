@@ -6,6 +6,7 @@ const anthropic = new Anthropic({
   apiKey: process.env.API_KEY,
 });
 
+// This is review file
 const reviewFile = async (content, fileName) => {
   console.log(`Reviewing file: ${fileName}`);
   const response = await anthropic.messages.create({
