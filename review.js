@@ -39,3 +39,26 @@ const reviewFile = async (content, fileName) => {
   const result = JSON.parse(responseText.trim());
   return result;
 };
+
+async function main() {
+  const changedFiles = process.argv.slice(2);
+  const reviews = await Promise.all(changedFiles.map(async (filePath) => {
+    const content = fs.readFileSync(filePath, 'utf8');
+    const fileName = path.basename(filePath);
+    const review = await reviewFile(content, fileName);
+    return { file: fileName, message: review.message, score: review.points };
+  }));
+
+  const comment = reviews.map(review => `
+| 📂 **File**   | 💬 **Comment** | 🏆 **Score**    |
+| :-----------: |---------------| :-------------: |
+| \`${review.file}\` | ${review.message} | ${review.score}/10 |
+  `).join('\n');
+
+  console.log(comment);
+}
+
+main().catch(error => {
+  console.error(error);
+  process.exit(1);
+});
