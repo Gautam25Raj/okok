@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: '20'
       - name: Install dependencies
-        run: install @octokit/rest node-fetch @anthropic-ai/sdk
+        run: npm install @octokit/rest node-fetch @anthropic-ai/sdk @actions/github
       - name: Run AI Review
         id: ai-review
         env:
